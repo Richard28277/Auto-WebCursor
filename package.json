@@ -1,0 +1,19 @@
+{
+  "name": "source",
+  "version": "1.0.0",
+  "main": "background.js",
+  "scripts": {
+    "build": "webpack"
+  },
+  "keywords": [],
+  "author": "Richard Xu (Richard28277)",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "firebase": "^11.1.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  }
+}
