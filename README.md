@@ -97,10 +97,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contact
 
 For questions or feedback, please contact us at [rich28277@gmail.com](mailto:rich28277@gmail.com).
-
----
-
-## Acknowledgments
-
-- Thanks to the open-source community for their invaluable tools and libraries.
-- Special thanks to our users for their feedback and support.
