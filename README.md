@@ -19,7 +19,7 @@ Auto WebCursor is a Chrome extension that automates web browsing tasks using AI.
 ### Step 1: Download the Extension
 1. Clone this repository to your local machine:
    ```bash
-   git clone https://github.com/your-username/auto-webcursor.git
+   git clone https://github.com/Richard28277/auto-webcursor.git
    ```
 2. Navigate to the project folder:
    ```bash
