@@ -1,6 +1,6 @@
 # Auto WebCursor
 
-Auto WebCursor is a Chrome extension that automates web browsing tasks using AI. It allows users to control the cursor and perform actions on web pages through simple text or voice inputs. Designed with accessibility in mind, Auto WebCursor empowers individuals with disabilities to navigate the web independently, enhancing their digital autonomy.
+Auto WebCursor is a Chrome extension that automates web browsing tasks using AI. It allows users to control the cursor and perform actions on web pages through simple text or voice inputs. By interacting with the HTML elements, WebCursor can automatically navigate pages, and perform actions like click or input with simple text prompts.
 
 ---
 
@@ -9,7 +9,6 @@ Auto WebCursor is a Chrome extension that automates web browsing tasks using AI.
 - **AI-Powered Automation**: Control your cursor and automate web tasks using text or voice commands.
 - **Accessibility First**: Designed to make web navigation easier for individuals with disabilities.
 - **Voice and Text Input**: Interact with the web using natural language.
-- **Secure and Privacy-Focused**: Your data is processed locally whenever possible.
 - **Customizable Workflows**: Create personalized workflows for common tasks.
 
 ---
