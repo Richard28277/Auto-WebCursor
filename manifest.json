@@ -44,11 +44,11 @@
   "host_permissions": ["<all_urls>"],
   "action": {},
   "commands": {
-    "_execute_action": {
-      "description": "Shortcut for execute extension",
+    "open-side-panel": {
       "suggested_key": {
         "default": "Alt+W"
-      }
+      },
+      "description": "Open the side panel"
     }
   }
 }

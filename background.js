@@ -1,3 +1,16 @@
+chrome.action.onClicked.addListener((tab) => {
+  chrome.sidePanel.open({ windowId: tab.windowId });
+});
+
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "open-side-panel") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.sidePanel.open({ windowId: tabs[0].windowId });
+      }
+    });
+  }
+});
 // Function to extract and parse JSON from LLM response
 function extractJSON(response) {
   const startMarker = '```json\n';
@@ -71,7 +84,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
           type: 'usageUpdate',
           usage: usageData.usage
         });
-        if (usageData.usage > 20) {
+        if (usageData.usage > 30) {
           chrome.runtime.sendMessage({
             type: 'error',
             message: 'You have reached the usage limit today. Please try again tomorrow.',
@@ -80,14 +93,19 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
           });
           return;
         }
-
-        const goal = await fetchLLMResponse(prompt="Formalize the user's request. Use chronological order and logical statements. You are starting in a search engine page. The first step must be to search for user request.", text=request.command);
+        chrome.runtime.sendMessage({
+          type: 'stepUpdate',
+          step: 0,
+          action: "Command received",
+          message: "Generating automation steps.",
+        });
+        const goal = await fetchLLMResponse(prompt="Formalize the user's request into specific, actionable steps for AI agent to automate web browsing. The user is starting from a search engine page. You must note specific actions, like input text, click on button, look for element, etc. Stop actions when goal is achieved.", text=request.command);
         console.log("Formalized Goal: " + goal);
         let allSteps = [];
 
         while (stepCount < maxSteps && shouldContinue) {
           // Generate the next step using the LLM
-          const prompt = `Given the current HTML content: ${currentHtml}. The goal is to ${goal}. The previous steps completed were: ${JSON.stringify(allSteps)}. Please respond with a JSON object containing "selector", "action", and "reason". If the action is "click", provide just the selector. If the action is "input", provide "selector" and "text" to input. If the task is the final step, include a "task_completed" field with a value of true. Output the JSON. Do not use triple quotes. Do not repeat the last step. selector: .gs-title is not allowed! Use herf when possible. Consider the action history, if repeated failures to select an element, try a different element or action.`;
+          const prompt = `Given the current HTML content: ${currentHtml}. The goal is to ${goal}. The previous steps completed were: ${JSON.stringify(allSteps)}. Please respond with a JSON object containing "selector", "action", and "reason". If the action is "click", provide just the selector. If the action is "input", provide "selector" and "text" to input. If the task is the final step, include a "task_completed" field with a value of true. Output the JSON. Do not use triple quotes. Do not repeat the last step if it returned error. selector: .gs-title is not allowed! Use herf when possible. Consider the action history, if failed to select an element, try a different element or action. Always make sure the selector is present in the html content.`;
           let llmResponse;
           try {
             llmResponse = await fetchLLMResponse(prompt, "Provide the output as a JSON object.");
@@ -136,24 +154,34 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                 function: clickElement,
                 args: [data.selector]
               });
-              if (!clickResponse || !clickResponse[0].result) {
-                // Add error to history and continue
-                allSteps.push({
-                  action: 'error',
-                  selector: data.selector,
-                  message: `Failed to click element: ${data.selector}`
-                });
-                stepCount++;
-                chrome.runtime.sendMessage({
-                  type: 'stepUpdate',
-                  step: stepCount + 1,
-                  message: `Failed to click element: ${data.selector}`,
-                  action: 'error',
-                  selector: data.selector,
-                  html: currentHtml
-                });
-                continue;
-              }
+          if (!clickResponse || !clickResponse[0].result) {
+            // Check if this is a repeated failure
+            const lastError = allSteps[allSteps.length - 1];
+            const isRepeatError = lastError && 
+              lastError.action === 'error' &&
+              lastError.selector === data.selector;
+            
+            const errorMessage = isRepeatError ?
+              `Failed to click element: ${data.selector}. Reminder: Do not repeat failed actions. ${data.selector} does not exist in the current HTML content.` :
+              `Failed to click element: ${data.selector}`;
+
+            // Add error to history and continue
+            allSteps.push({
+              action: 'error',
+              selector: data.selector,
+              message: errorMessage
+            });
+            stepCount++;
+            chrome.runtime.sendMessage({
+              type: 'stepUpdate',
+              step: stepCount + 1,
+              message: errorMessage,
+              action: 'error',
+              selector: data.selector,
+              html: currentHtml
+            });
+            continue;
+          }
             }
           } else if (data.action === 'input') {
             if (!data.text) {
@@ -165,17 +193,27 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
               args: [data.selector, data.text]
             });
             if (!inputResponse || !inputResponse[0].result) {
+              // Check if this is a repeated failure
+              const lastError = allSteps[allSteps.length - 1];
+              const isRepeatError = lastError && 
+                lastError.action === 'error' &&
+                lastError.selector === data.selector;
+              
+              const errorMessage = isRepeatError ?
+                `Failed to input text to: ${data.selector}. Reminder: Do not repeat failed actions. ${data.selector} does not exist in the current HTML content.` :
+                `Failed to input text to: ${data.selector}`;
+
               // Add error to history and continue
               allSteps.push({
                 action: 'error',
                 selector: data.selector,
-                message: `Failed to input text to: ${data.selector}`
+                message: errorMessage
               });
               stepCount++;
               chrome.runtime.sendMessage({
                 type: 'stepUpdate',
                 step: stepCount + 1,
-                message: `Failed to input text to: ${data.selector}`,
+                message: errorMessage,
                 action: 'error',
                 selector: data.selector,
                 html: currentHtml

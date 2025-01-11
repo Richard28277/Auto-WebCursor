@@ -48,7 +48,7 @@ document.getElementById('loginButton').addEventListener('click', async function 
       document.getElementById('commandSection').style.display = 'block';
       // Update usage display from login response
       if (data.usage !== undefined) {
-        document.getElementById('usageDisplay').textContent = `Daily usage: ${data.usage}/20`;
+        document.getElementById('usageDisplay').textContent = `Daily usage: ${data.usage}/30`;
       }
     } else {
       document.getElementById('loginStatus').textContent = 'Invalid credentials';
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   usageDiv.style.backgroundColor = '#f0f0f0';
   usageDiv.style.borderRadius = '4px';
   usageDiv.style.fontWeight = 'bold';
-  usageDiv.textContent = 'Daily usage limit: 20';
+  usageDiv.textContent = 'Daily usage limit: 30';
   document.body.appendChild(usageDiv);
 
   // Add logout button
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('logoutButton').style.display = 'block';
         document.getElementById('commandSection').style.display = 'block';
         if (data.usage !== undefined) {
-          document.getElementById('usageDisplay').textContent = `Daily usage: ${data.usage}/20`;
+          document.getElementById('usageDisplay').textContent = `Daily usage: ${data.usage}/30`;
         }
       }
     } catch (error) {
@@ -241,7 +241,7 @@ document.getElementById('stopButton').addEventListener('click', function () {
 function updateUsageDisplay(usage) {
   const usageDisplay = document.getElementById('usageDisplay');
   if (usageDisplay) {
-    usageDisplay.textContent = `Daily usage: ${usage}/20`;
+    usageDisplay.textContent = `Daily usage: ${usage}/30`;
   }
 }
 
