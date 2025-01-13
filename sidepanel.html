@@ -2,8 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Command Executor</title>
+    <title>WebCursor</title>
+    <link rel="stylesheet" href="sidepanel.css">
     <style>
+        /* Settings icon styles */
+        #settingsIcon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+        #settingsIcon:hover {
+            color: #333;
+        }
+        /* Dropdown styles */
+        select {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -37,6 +58,8 @@
         }
         .timeline {
             margin-top: 20px;
+            height: calc(100vh - 200px); /* Adjust height based on screen size */
+            overflow-y: auto; /* Enable vertical scrolling */
         }
         .step {
             background-color: #fff;
@@ -100,34 +123,49 @@
     </style>
 </head>
 <body>
-    <h1>Smart WebCursor</h1>
-    <div id="loginSection">
-      <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom: 10px;">
-      <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom: 10px;">
-      <button id="loginButton" style="background-color: #007BFF;">Login</button>
-      <div style="text-align: center; margin: 10px 0;">
-        <span style="color: #666;">or</span>
-        <button id="showSignupButton" style="background-color: transparent; color: #007BFF; border: none; cursor: pointer;">Sign Up</button>
-      </div>
-      <div id="loginStatus" style="margin: 10px 0; color: #666; text-align: center;"></div>
-    </div>
-    <div id="signupSection" style="display: none;">
-      <input type="email" id="signupEmail" placeholder="Email" style="margin-bottom: 10px;">
-      <input type="password" id="signupPassword" placeholder="Password" style="margin-bottom: 10px;">
-      <input type="password" id="signupConfirmPassword" placeholder="Confirm Password" style="margin-bottom: 10px;">
-      <button id="signupButton" style="background-color: #28a745;">Create Account</button>
-      <div style="text-align: center; margin: 10px 0;">
-        <span style="color: #666;">Already have an account? </span>
-        <button id="showLoginButton" style="background-color: transparent; color: #007BFF; border: none; cursor: pointer;">Login</button>
-      </div>
-      <div id="signupStatus" style="margin: 10px 0; color: #666; text-align: center;"></div>
+    <!-- Settings icon -->
+    <div id="settingsIcon">⚙️</div>
+    <h1 style="color: #0870e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 650; padding: 10px;">Auto WebCursor</h1>
+
+    <!-- API Configuration Section -->
+    <div id="apiConfigSection">
+        <h2>API Configuration</h2>
+        
+        <div class="form-group">
+            <label for="apiProvider">API Provider:</label>
+            <select id="apiProvider">
+                <option value="openai">OpenAI</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="claude">Claude</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="apiModel">Model:</label>
+            <select id="apiModel">
+                <!-- Options will be populated based on selected provider -->
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" placeholder="Enter your API key">
+        </div>
+
+        <button id="saveConfig">Save Configuration</button>
+        <div id="configStatus"></div>
     </div>
     <div id="commandSection" style="display: none;">
-      <input type="text" id="userCommand" placeholder="Describe the action you want to perform">
-    <button id="executeButton">Automate Command</button>
-    <button id="stopButton" style="background-color: #dc3545; margin-top: 10px; display: none;">Stop Automation</button>
-    <div class="timeline" id="timeline"></div>
-    <p style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);">Alt+W Shortcut</p>
-    <script type="module" src="sidepanel.js"></script>
+        <input type="text" id="userCommand" placeholder="Describe the action you want to perform">
+      <button id="executeButton">Automate Command</button>
+      <button id="stopButton" style="background-color: #dc3545; margin-top: 10px; display: none;">Stop Automation</button>
+      <div class="timeline" id="timeline"></div>
+    <div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px;">
+        <p>Alt+W Shortcut</p>
+        <p>
+            <a href="https://richard28277.github.io/Auto-WebCursor/privacy.html" target="_blank">Privacy Policy</a>
+        </p>
+    </div>
+      <script type="module" src="sidepanel.js"></script>
 </body>
 </html>

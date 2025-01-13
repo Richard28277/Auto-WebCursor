@@ -1,6 +1,6 @@
 :root {
   --bg-color: #0f0f0f;
-  --text-color: #ffffff;
+  --text-color: #0d0d0d;
   --accent-color: #1e1e1e;
   --hover-color: #2a2a2a;
   --primary-color: #00ffaa;
@@ -136,7 +136,6 @@ body {
   height: 100vh;
   width: 100%;
   overflow: hidden;
-  text-align: center;
 }
 
 .container {

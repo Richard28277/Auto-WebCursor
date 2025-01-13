@@ -11,6 +11,7 @@ chrome.commands.onCommand.addListener((command) => {
     });
   }
 });
+
 // Function to extract and parse JSON from LLM response
 function extractJSON(response) {
   const startMarker = '```json\n';
@@ -43,7 +44,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   }
   
   if (request.action === 'executeCommand') {
-    shouldContinue = true; // Reset flag when starting new command
+    shouldContinue = true;
     chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
       try {
         const tabId = tabs[0].id;
@@ -51,61 +52,40 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         currentHtml = currentHtml.slice(0, 3000);
         let stepCount = 0;
         const maxSteps = 15;
-        // Formalize the user's request using LLM
-        const credentials = await new Promise((resolve, reject) => {
-          chrome.storage.local.get('credentials', (result) => {
+
+        // Get API configuration
+        const apiConfig = await new Promise((resolve, reject) => {
+          chrome.storage.local.get('apiConfig', (result) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError));
             } else {
-              resolve(result.credentials ? result.credentials : null);
+              resolve(result.apiConfig ? result.apiConfig : null);
             }
           });
         });
         
-        if (!credentials) {
-          throw new Error('User not logged in');
-        }
-        // Check usage limit
-        const usageResponse = await fetch("https://seekso.pythonanywhere.com/api/webcursor-usage", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Basic ${btoa(`${credentials.email}:${credentials.password}`)}`
-          }
-        });
-
-        if (!usageResponse.ok) {
-          throw new Error('Failed to check usage limit');
+        if (!apiConfig) {
+          throw new Error('API configuration not set');
         }
 
-        const usageData = await usageResponse.json();
-        console.log('Usage data:', usageData);
-        chrome.runtime.sendMessage({
-          type: 'usageUpdate',
-          usage: usageData.usage
-        });
-        if (usageData.usage > 30) {
-          chrome.runtime.sendMessage({
-            type: 'error',
-            message: 'You have reached the usage limit today. Please try again tomorrow.',
-            html: '',
-            llmResponse: ''
-          });
-          return;
-        }
         chrome.runtime.sendMessage({
           type: 'stepUpdate',
           step: 0,
           action: "Command received",
           message: "Generating automation steps.",
         });
-        const goal = await fetchLLMResponse(prompt="Formalize the user's request into specific, actionable steps for AI agent to automate web browsing. The user is starting from a search engine page. You must note specific actions, like input text, click on button, look for element, etc. Stop actions when goal is achieved.", text=request.command);
+
+        const goal = await fetchLLMResponse(
+          "Formalize the user's request into specific, actionable steps for AI agent to automate web browsing. The user is starting from a search engine page. You must note specific actions, like input text, click on button, look for element, etc. Stop actions when goal is achieved. The avaliable actions are click and input. The goal is to " + request.command + ".",
+          request.command
+        );
+
         console.log("Formalized Goal: " + goal);
         let allSteps = [];
 
         while (stepCount < maxSteps && shouldContinue) {
-          // Generate the next step using the LLM
-          const prompt = `Given the current HTML content: ${currentHtml}. The goal is to ${goal}. The previous steps completed were: ${JSON.stringify(allSteps)}. Please respond with a JSON object containing "selector", "action", and "reason". If the action is "click", provide just the selector. If the action is "input", provide "selector" and "text" to input. If the task is the final step, include a "task_completed" field with a value of true. Output the JSON. Do not use triple quotes. Do not repeat the last step if it returned error. selector: .gs-title is not allowed! Use herf when possible. Consider the action history, if failed to select an element, try a different element or action. Always make sure the selector is present in the html content.`;
+          const prompt = `Given the current HTML content: ${currentHtml}. The goal is to ${goal}. The previous steps completed were: ${JSON.stringify(allSteps)}. Please respond with a JSON object containing "selector", "action", and "reason". If the action is "click", provide just the selector. If the action is "input", provide "selector" and "text" to input. The avaliable actions are click and input. The avaliable selectors are only those within the html. If the task is the final step, include a "task_completed" field with a value of true. Output the JSON. Do not use triple quotes. Do not repeat the last step if it returned error. selector: .gs-title is not allowed! Use herf when possible. Consider the action history, if failed to select an element, try a different element or action. Always make sure the selector is present in the html content.`;
+
           let llmResponse;
           try {
             llmResponse = await fetchLLMResponse(prompt, "Provide the output as a JSON object.");
@@ -113,7 +93,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
           } catch (error) {
             throw new Error('Error fetching LLM response: ' + error.message);
           }
-          // Extract and parse JSON from LLM response
+
           let data;
           try {
             data = extractJSON(llmResponse);
@@ -121,12 +101,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             throw new Error('Error parsing LLM response: ' + e.message);
           }
 
-          // Validate the JSON object
           if (!data.action || !data.selector) {
             throw new Error('Missing required fields in LLM response.');
           }
 
-          // Log the reasoning and action to the UI
           chrome.runtime.sendMessage({
             type: 'stepUpdate',
             step: stepCount + 1,
@@ -138,50 +116,45 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             llmResponse: llmResponse,
             prompt: prompt
           });
+
           console.log("Reason: " + data.reason);
 
-          // Execute the action
           if (data.action === 'click') {
-            // Check if the selector is a link with a full URL
             const urlMatch = data.selector.match(/a\[href=['"](http[s]?:\/\/[^'"]+)['"]\]/);
             if (urlMatch) {
-              // Redirect to the URL
               chrome.tabs.update(tabId, { url: urlMatch[1] });
             } else {
-              // Perform the click action
               const clickResponse = await chrome.scripting.executeScript({
                 target: { tabId: tabId },
                 function: clickElement,
                 args: [data.selector]
               });
-          if (!clickResponse || !clickResponse[0].result) {
-            // Check if this is a repeated failure
-            const lastError = allSteps[allSteps.length - 1];
-            const isRepeatError = lastError && 
-              lastError.action === 'error' &&
-              lastError.selector === data.selector;
-            
-            const errorMessage = isRepeatError ?
-              `Failed to click element: ${data.selector}. Reminder: Do not repeat failed actions. ${data.selector} does not exist in the current HTML content.` :
-              `Failed to click element: ${data.selector}`;
+              if (!clickResponse || !clickResponse[0].result) {
+                const lastError = allSteps[allSteps.length - 1];
+                const isRepeatError = lastError && 
+                  lastError.action === 'error' &&
+                  lastError.selector === data.selector;
+                
+                const errorMessage = isRepeatError ?
+                  `Failed to click element: ${data.selector}. Reminder: Do not repeat failed actions. ${data.selector} does not exist in the current HTML content.` :
+                  `Failed to click element: ${data.selector}`;
 
-            // Add error to history and continue
-            allSteps.push({
-              action: 'error',
-              selector: data.selector,
-              message: errorMessage
-            });
-            stepCount++;
-            chrome.runtime.sendMessage({
-              type: 'stepUpdate',
-              step: stepCount + 1,
-              message: errorMessage,
-              action: 'error',
-              selector: data.selector,
-              html: currentHtml
-            });
-            continue;
-          }
+                allSteps.push({
+                  action: 'error',
+                  selector: data.selector,
+                  message: errorMessage
+                });
+                stepCount++;
+                chrome.runtime.sendMessage({
+                  type: 'stepUpdate',
+                  step: stepCount + 1,
+                  message: errorMessage,
+                  action: 'error',
+                  selector: data.selector,
+                  html: currentHtml
+                });
+                continue;
+              }
             }
           } else if (data.action === 'input') {
             if (!data.text) {
@@ -193,7 +166,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
               args: [data.selector, data.text]
             });
             if (!inputResponse || !inputResponse[0].result) {
-              // Check if this is a repeated failure
               const lastError = allSteps[allSteps.length - 1];
               const isRepeatError = lastError && 
                 lastError.action === 'error' &&
@@ -203,7 +175,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                 `Failed to input text to: ${data.selector}. Reminder: Do not repeat failed actions. ${data.selector} does not exist in the current HTML content.` :
                 `Failed to input text to: ${data.selector}`;
 
-              // Add error to history and continue
               allSteps.push({
                 action: 'error',
                 selector: data.selector,
@@ -224,7 +195,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             throw new Error('Invalid action specified by LLM.');
           }
 
-          // Check if the task is completed
           if (data.task_completed) {
             console.log('Task completed successfully.');
             chrome.runtime.sendMessage({
@@ -240,13 +210,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             return;
           }
 
-          // Wait for 3 seconds before updating the current HTML
           await new Promise((resolve) => setTimeout(resolve, 2000));
-          // Update the current HTML after the action
           currentHtml = (await fetchPageHtml(tabId)).slice(0, 3000);
           stepCount++;
 
-          // Update the allSteps array with the current step
           allSteps.push({
             action: data.action,
             selector: data.selector,
@@ -286,7 +253,6 @@ async function fetchPageHtml(tabId) {
   const htmlResponse = await chrome.scripting.executeScript({
     target: { tabId: tabId },
     function: () => {
-      // Select visible clickable elements
       const visibleClickableElements = Array.from(
         document.querySelectorAll('a, button, input, textarea, select')
       )
@@ -317,16 +283,14 @@ async function fetchPageHtml(tabId) {
             attributes.push(`aria-label="${el.getAttribute('aria-label')}"`);
           }
 
-          const text = el.innerText.trim(); // Use innerText for better text handling
+          const text = el.innerText.trim();
           const attributesString = attributes.length ? ` ${attributes.join(' ')}` : '';
           return `<${tagName}${attributesString}>${text}</${tagName}>`;
         })
         .join('');
 
-      // Create a new document fragment with the cleaned elements
       const cleanedDoc = document.implementation.createHTMLDocument('');
       cleanedDoc.body.innerHTML = visibleClickableElements;
-
       return cleanedDoc.documentElement.outerHTML;
     }
   });
@@ -338,87 +302,83 @@ async function fetchPageHtml(tabId) {
   }
 }
 
-
 async function fetchLLMResponse(prompt, text) {
-  // Get stored credentials
-  const credentials = await new Promise((resolve, reject) => {
-    chrome.storage.local.get('credentials', (result) => {
+  const apiConfig = await new Promise((resolve, reject) => {
+    chrome.storage.local.get('apiConfig', (result) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError));
       } else {
-        resolve(result.credentials ? result.credentials : null);
+        resolve(result.apiConfig ? result.apiConfig : null);
       }
     });
   });
   
-  if (!credentials) {
-    throw new Error('User not logged in');
+  if (!apiConfig) {
+    throw new Error('API configuration not set');
   }
 
-  const email = credentials.email;
-  const password = credentials.password;
-
-  const response = await fetch("https://seekso.pythonanywhere.com/api/generate-move", {
+  const response = await fetch(`${apiConfig.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Basic ${btoa(`${email}:${password}`)}`
+      "Authorization": `Bearer ${apiConfig.apiKey}`
     },
-    body: JSON.stringify({ text: text.trimStart(), prompt }),
+    body: JSON.stringify({
+      model: apiConfig.model,
+      messages: [
+        {
+          role: "system",
+          content: prompt
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    }),
   });
   
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.response;
+  return data.choices[0].message.content;
 }
 
 function clickElement(selector) {
   const element = document.querySelector(selector);
   if (element) {
-    // Save original border style
     const originalBorder = window.getComputedStyle(element, null).getPropertyValue('border');
-    // Add green border
     element.style.border = "3px solid red";
-    // Wait for 1 second
     setTimeout(() => {
-      // Restore original border
       element.style.border = originalBorder;
-      // Perform the click
       element.click();
     }, 1000);
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 function inputText(selector, text) {
   const element = document.querySelector(selector);
   if (element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT')) {
-    // Save original border style
     const originalBorder = window.getComputedStyle(element, null).getPropertyValue('border');
-    // Add green border
     element.style.border = "3px solid red";
-    // Wait for 1 second
     setTimeout(() => {
-      // Restore original border
       element.style.border = originalBorder;
-      // Perform the input action
       if (element.tagName === 'SELECT') {
         element.value = text;
       } else {
         element.value = text;
-        // Trigger input event for better compatibility
         const event = new Event('input', { bubbles: true });
         element.dispatchEvent(event);
       }
     }, 1000);
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
