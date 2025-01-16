@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>WebCursor</title>
     <link rel="stylesheet" href="sidepanel.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         /* Settings icon styles */
         #settingsIcon {
@@ -157,8 +158,13 @@
     </div>
     <div id="commandSection" style="display: none;">
         <input type="text" id="userCommand" placeholder="Describe the action you want to perform">
-      <button id="executeButton">Automate Command</button>
-      <button id="stopButton" style="background-color: #dc3545; margin-top: 10px; display: none;">Stop Automation</button>
+      <div style="display: flex; gap: 10px;">
+        <button id="executeButton">Automate Command</button>
+        <button id="stopButton" style="background-color: #dc3545; margin-top: 10px; display: none;">Stop Automation</button>
+        <button id="microphoneButton" class="btn">
+          <span class="material-icons">mic</span>
+        </button>
+      </div>
       <div class="timeline" id="timeline"></div>
     <div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px;">
         <p>Alt+W Shortcut</p>

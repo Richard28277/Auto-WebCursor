@@ -577,3 +577,48 @@ input:checked + .slider:before {
     opacity: 1;
   }
 }
+
+/* Microphone button styles */
+#microphoneButton {
+  background-color: #0870e0;
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+#microphoneButton:hover {
+  background-color: #065bb3;
+  transform: scale(1.05);
+}
+
+#microphoneButton.recording {
+  background-color: #dc3545;
+  animation: pulse 1.5s infinite;
+}
+
+#microphoneButton .material-icons {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+#microphoneButton.recording .material-icons {
+  transform: scale(1.2);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
