@@ -4,7 +4,7 @@ Auto WebCursor is a Chrome extension that automates web browsing tasks using AI.
 
 ## Demo
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/6a2gAVXJeKA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![Demo Video](https://img.youtube.com/vi/6a2gAVXJeKA/0.jpg)](https://www.youtube.com/watch?v=6a2gAVXJeKA)
 
 ---
 
