@@ -6,7 +6,7 @@ const apiProviders = {
   },
   deepseek: {
     baseUrl: 'https://api.deepseek.com/v1',
-    models: ['deepseek-chat']
+    models: ['deepseek-chat', 'deepseek-reasoner']
   },
   claude: {
     baseUrl: 'https://api.anthropic.com/v1',

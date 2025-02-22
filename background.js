@@ -75,16 +75,27 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
           message: "Generating automation steps.",
         });
 
-        const goal = await fetchLLMResponse(
-          "Formalize the user's request into specific, actionable steps for AI agent to automate web browsing. The user is starting from a search engine page. You must note specific actions, like input text, click on button, look for element, etc. Stop actions when goal is achieved. The avaliable actions are click and input. The goal is to " + request.command + ".",
-          request.command
-        );
+        // Get current URL
+        const currentTab = await chrome.tabs.get(tabId);
+        const url = new URL(currentTab.url);
+        
+        // Base prompt
+        let basePrompt = "Formalize the user's request into specific, actionable steps for AI agent to automate web browsing. The user is starting from a search engine page. You must note specific actions, like input text, click on button, look for element, etc. Stop actions when goal is achieved. The avaliable actions are click and input. The goal is to " + request.command + ".";
+        
+        // Add URL-specific instructions
+        if (url.hostname === 'www.google.com') {
+          basePrompt += " When on Google.com, prioritize using the search bar and focus on relevant search results. Use the 'q' parameter in the URL to track search queries. Pay special attention to sponsored results and organic results differentiation.";
+        } else if (url.hostname === 'www.reddit.com') {
+          basePrompt += " When on Reddit.com, use the search input with the selector 'input[name=\"q\"]'. Focus on relevant search results and subreddit navigation.";
+        }
+
+        const goal = await fetchLLMResponse(basePrompt, request.command);
 
         console.log("Formalized Goal: " + goal);
         let allSteps = [];
 
         while (stepCount < maxSteps && shouldContinue) {
-          const prompt = `Given the current HTML content: ${currentHtml}. The goal is to ${goal}. The previous steps completed were: ${JSON.stringify(allSteps)}. Please respond with a JSON object containing "selector", "action", and "reason". If the action is "click", provide just the selector. If the action is "input", provide "selector" and "text" to input. The avaliable actions are click and input. The avaliable selectors are only those within the html. If the task is the final step, include a "task_completed" field with a value of true. Output the JSON. Do not use triple quotes. Do not repeat the last step if it returned error. selector: .gs-title is not allowed! Use herf when possible. Consider the action history, if failed to select an element, try a different element or action. Always make sure the selector is present in the html content.`;
+          const prompt = `Given the current HTML content: ${currentHtml}. The goal is to ${goal}. The previous steps completed were: ${JSON.stringify(allSteps)}. Please respond with a JSON object containing "selector", "action", and "reason". If the action is "click", provide just the selector. If the action is "input", provide "selector" and "text" to input. The avaliable actions are click and input. The avaliable selectors are only those within the html. If the task is the final step, include a "task_completed" field with a value of true. Output the JSON. Do not use triple quotes. Do not repeat the last step if it returned error. selector: .gs-title is not allowed! Use herf when possible. Consider the action history, if failed to select an element, try a different element or action. Always make sure the selector is present in the html content. Only provide one action in the response.`;
 
           let llmResponse;
           try {
