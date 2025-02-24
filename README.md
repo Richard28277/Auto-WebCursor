@@ -58,25 +58,6 @@ Auto WebCursor is a Chrome extension that automates web browsing tasks using AI.
 
 ---
 
-## Permissions
-
-Auto WebCursor requires the following permissions to function:
-- **`activeTab`**: To interact with the current web page.
-- **`storage`**: To save user preferences and workflows.
-- **`scripting`**: To execute scripts on web pages.
-- **`clipboardRead` and `clipboardWrite`**: To handle copy-paste actions.
-- **`tabs`**: To manage browser tabs.
-
-These permissions are used solely for the intended functionality and are not used to collect or share data.
-
----
-
-## Privacy Policy
-
-Auto WebCursor is designed to respect your privacy. We do not collect, store, or share any personal or sensitive information. For more details, please read our [Privacy Policy](privacy.html).
-
----
-
 ## Contributing
 
 We welcome contributions! If you'd like to contribute to Auto WebCursor, please follow these steps:
