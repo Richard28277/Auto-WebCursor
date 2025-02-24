@@ -88,6 +88,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For questions or feedback, please contact us at [rich28277@gmail.com](mailto:rich28277@gmail.com).
 
----
-
-This updated guide now includes instructions for downloading the ZIP file from GitHub, extracting it, and loading the extension into your browser.
