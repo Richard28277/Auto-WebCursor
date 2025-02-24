@@ -10,7 +10,7 @@ Auto WebCursor is a Chrome extension that automates web browsing tasks using AI.
 
 ## Features
 
-- **AI-Powered Automation**: Control your cursor and automate web tasks using text or voice commands.
+- **LLM-based Computer Use**: Control your and automate web tasks using text or voice commands, allowing the LLM to click, read, and input.
 - **Accessibility First**: Designed to make web navigation easier for individuals with disabilities.
 - **Voice and Text Input**: Interact with the web using natural language.
 - **Customizable Workflows**: Create personalized workflows for common tasks.
