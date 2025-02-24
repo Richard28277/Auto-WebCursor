@@ -53,8 +53,8 @@ Auto WebCursor is a Chrome extension that automates web browsing tasks using AI.
    - Type or speak your command in the input field (e.g., "Click the login button").
    - The AI will process your command and perform the action on the web page.
 
-3. **Customize Workflows**:
-   - Use the settings menu to create and save custom workflows for repetitive tasks.
+3. **Customize API**:
+   - Use the settings menu to modify the API provider and model type. 
 
 ---
 
